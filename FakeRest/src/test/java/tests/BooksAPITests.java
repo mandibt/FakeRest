@@ -140,4 +140,25 @@ public class BooksAPITests extends TestBase {
 
         Assert.assertEquals(response.getStatusCode(), HttpStatus.SC_NOT_FOUND);
     }
+    
+    @Test(priority = 7)
+    @Story("POST Create Book with Empty Title")
+    @Description("Test to verify API behavior when creating a book with an empty title")
+    @Severity(SeverityLevel.NORMAL)
+    public void testCreateBookWithInvalidDate() {
+        
+        Book invalidBook = Book.builder()
+                .id(0) // Will be assigned by the API
+                .title("Invalid Date Format")
+                .description("Description for test book")
+                .pageCount(10)
+                .excerpt("Excerpt from test book")
+                .publishDate("this-is-not-a-date")
+                .build();
+
+        Response response = BooksApi.createBook(invalidBook);
+        ReportManager.logResponse(response);
+        
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.SC_BAD_REQUEST);
+    }
 }
