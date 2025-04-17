@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="API Testing Suite">
+    <listeners>
+        <listener class-name="listeners.TestListener"/>
+    </listeners>
+
+    <test name="Books API Tests">
+        <classes>
+            <class name="tests.BooksAPITests"/>
+        </classes>
+    </test>
+
+    <test name="Authors API Tests">
+        <classes>
+            <class name="tests.AuthorsAPITests"/>
+        </classes>
+    </test>
+</suite>
