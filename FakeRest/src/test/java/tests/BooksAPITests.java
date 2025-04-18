@@ -2,11 +2,16 @@ package tests;
 
 import api.BooksApi;
 import io.qameta.allure.*;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import models.Book;
 import org.apache.http.HttpStatus;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import utils.ConfigReader;
+import utils.MalformedBookRequest;
 import utils.ReportManager;
 import utils.TestBase;
 
@@ -53,7 +58,7 @@ public class BooksAPITests extends TestBase {
     @Severity(SeverityLevel.CRITICAL)
     public void testCreateBook() {
         Book newBook = Book.builder()
-                .id(0) // Will be assigned by the API
+                .id(0)
                 .title("Test Book " + generateRandomString())
                 .description("Description for test book")
                 .pageCount(100)
@@ -142,13 +147,13 @@ public class BooksAPITests extends TestBase {
     }
     
     @Test(priority = 7)
-    @Story("POST Create Book with Empty Title")
-    @Description("Test to verify API behavior when creating a book with an empty title")
+    @Story("POST Create Book with invalida publish date format")
+    @Description("Test to verify API behavior when creating a book with an invalid date format")
     @Severity(SeverityLevel.NORMAL)
     public void testCreateBookWithInvalidDate() {
         
         Book invalidBook = Book.builder()
-                .id(0) // Will be assigned by the API
+                .id(0)
                 .title("Invalid Date Format")
                 .description("Description for test book")
                 .pageCount(10)
@@ -160,5 +165,35 @@ public class BooksAPITests extends TestBase {
         ReportManager.logResponse(response);
         
         Assert.assertEquals(response.getStatusCode(), HttpStatus.SC_BAD_REQUEST);
+    }
+    
+    @Test(priority = 8)
+    @Story("POST Create Book with Invalid Data Types")
+    @Description("Test to verify API behavior when creating a book with string values in integer fields")
+    @Severity(SeverityLevel.CRITICAL)
+    public void testCreateBookWithInvalidPageCount() {
+        MalformedBookRequest request = new MalformedBookRequest()
+            .setField("pageCount", "invalid-number");
+        
+        String BASE_URL = ConfigReader.getProperty("base.url");
+        String BOOKS_ENDPOINT = "/api/v1/Books";
+
+        
+        Response response = RestAssured
+                .given()
+                .baseUri(RestAssured.baseURI)
+                .contentType(ContentType.JSON)
+                .body(request.toMap())
+                .when()
+                .post(BASE_URL + BOOKS_ENDPOINT)
+                .then()
+                .log().all()
+                .extract().response();
+        
+        Assert.assertTrue(
+        	    response.getStatusCode() == HttpStatus.SC_BAD_REQUEST || 
+        	    response.getStatusCode() == HttpStatus.SC_UNPROCESSABLE_ENTITY,
+        	    "Expected status code to be either 400 (Bad Request) or 422 (Unprocessable Entity) but was: " + response.getStatusCode()
+        	);
     }
 }

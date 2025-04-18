@@ -2,11 +2,16 @@ package tests;
 
 import api.AuthorsApi;
 import io.qameta.allure.*;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import models.Author;
 import org.apache.http.HttpStatus;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import utils.ConfigReader;
+import utils.MalformedAuthorRequest;
 import utils.ReportManager;
 import utils.TestBase;
 
@@ -52,7 +57,7 @@ public class AuthorsAPITests extends TestBase {
     @Severity(SeverityLevel.CRITICAL)
     public void testCreateAuthor() {
         Author newAuthor = Author.builder()
-                .id(0) // Will be assigned by the API
+                .id(0)
                 .idBook("1")
                 .firstName("Test " + generateRandomString())
                 .lastName("Author " + generateRandomString())
@@ -133,5 +138,34 @@ public class AuthorsAPITests extends TestBase {
         ReportManager.logResponse(response);
 
         Assert.assertEquals(response.getStatusCode(), HttpStatus.SC_NOT_FOUND);
+    }
+    
+    @Test(priority = 7)
+    @Story("POST Create Author with Invalid Data Types")
+    @Description("Test to verify API behavior when creating an author with invalid ID")
+    @Severity(SeverityLevel.CRITICAL)
+    public void testCreateAuthorWithInvalidId() {
+        MalformedAuthorRequest request = new MalformedAuthorRequest()
+            .setField("id", "invalid-id");  // String instead of integer
+
+        String BASE_URL = ConfigReader.getProperty("base.url");
+        String AUTHORS_ENDPOINT = "/api/v1/Authors";
+
+        Response response = RestAssured
+            .given()
+            .baseUri(RestAssured.baseURI)
+            .contentType(ContentType.JSON)
+            .body(request.toMap())
+            .when()
+            .post(BASE_URL + AUTHORS_ENDPOINT)
+            .then()
+            .log().all()
+            .extract().response();
+
+        Assert.assertTrue(
+            response.getStatusCode() == HttpStatus.SC_BAD_REQUEST ||
+            response.getStatusCode() == HttpStatus.SC_UNPROCESSABLE_ENTITY,
+            "Expected status code to be either 400 (Bad Request) or 422 (Unprocessable Entity) but was: " + response.getStatusCode()
+        );
     }
 }
